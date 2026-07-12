@@ -1,0 +1,9 @@
+{
+  "name": "FixItNow",
+  "short_name": "FixItNow",
+  "description": "Book trusted home-service professionals.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8fb",
+  "theme_color": "#102a43"
+}
