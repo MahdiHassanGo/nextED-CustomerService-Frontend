@@ -10,6 +10,23 @@ The frontend is already configured to use the backend URL published in the backe
 https://fix-it-now-6b1c.vercel.app
 ```
 
+## Screenshots
+
+### Login Page
+![Login Page](./public/screenshots/login.png)
+
+### Admin Platform Overview
+![Platform Overview](./public/screenshots/dashboard.png)
+
+### Service Categories Management
+![Categories Management](./public/screenshots/categories.png)
+
+### User Account Moderation
+![User Account Moderation](./public/screenshots/users.png)
+
+### Admin Profile Settings
+![Profile Settings](./public/screenshots/profile.png)
+
 ## Included features
 
 ### Public experience
