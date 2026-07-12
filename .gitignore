@@ -7,7 +7,9 @@
 
 # production
 /build
-
+node_modules
+.next
+.env.local
 # local environment files
 .env
 .env.*

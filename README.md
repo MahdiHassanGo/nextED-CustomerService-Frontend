@@ -2,6 +2,8 @@
 
 A production-oriented **Next.js 16 + TypeScript** frontend for the FixItNow home-service backend.
 
+**Live Link:** [http://fix-it-now-frontend-gamma.vercel.app/](http://fix-it-now-frontend-gamma.vercel.app/)
+
 The frontend is already configured to use the backend URL published in the backend README:
 
 ```text
