@@ -1,5 +1,10 @@
 import { humanize, statusTone } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: string }) {
-  return <span className={`status-badge status-${statusTone(status as never)}`}>{humanize(status)}</span>;
+  const tone = statusTone(status as never);
+  return (
+    <span className={`status-badge status-${tone}`} title={`Status: ${humanize(status)}`}>
+      {humanize(status)}
+    </span>
+  );
 }
