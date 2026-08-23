@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
+import { getSafeRedirect, sanitizeInput } from "@/lib/security";
 import type { PublicUser } from "@/lib/types";
 import { getErrorMessage } from "@/lib/utils";
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
@@ -23,14 +24,15 @@ export function LoginForm() {
     event.preventDefault();
     setLoading(true);
     try {
-      const response = await api.post<{ user: PublicUser }>("/auth/login", form);
+      const sanitizedPayload = {
+        email: sanitizeInput(form.email),
+        password: form.password
+      };
+      const response = await api.post<{ user: PublicUser }>("/auth/login", sanitizedPayload);
       setUser(response.data.user);
       toast.success("Welcome back. Your secure session is active.");
       const requested = searchParams.get("next");
-      const destination =
-        requested && requested.startsWith("/") && !requested.startsWith("//")
-          ? requested
-          : "/dashboard";
+      const destination = getSafeRedirect(requested, "/dashboard");
       router.replace(destination);
       router.refresh();
     } catch (error) {

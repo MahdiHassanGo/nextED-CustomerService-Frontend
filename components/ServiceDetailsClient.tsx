@@ -4,6 +4,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
+import { sanitizeInput } from "@/lib/security";
 import type { Booking, Service } from "@/lib/types";
 import { formatDate, getErrorMessage, initials, money } from "@/lib/utils";
 import {
@@ -56,11 +57,13 @@ export function ServiceDetailsClient({ id }: { id: string }) {
     }
     setSaving(true);
     try {
+      const sanitizedAddress = sanitizeInput(form.address);
+      const sanitizedNote = sanitizeInput(form.note);
       const response = await api.post<Booking>("/bookings", {
         serviceId: id,
         scheduledAt: new Date(form.scheduledAt).toISOString(),
-        address: form.address,
-        note: form.note || undefined
+        address: sanitizedAddress,
+        note: sanitizedNote || undefined
       });
       toast.success(response.message);
       setBookingOpen(false);

@@ -8,6 +8,7 @@ export async function GET() {
   const token = randomBytes(32).toString("base64url");
   const production = process.env.NODE_ENV === "production";
   const cookieName = production ? "__Host-fixit_csrf" : "fixit_csrf";
+
   const response = NextResponse.json({ token });
   response.cookies.set({
     name: cookieName,
@@ -18,6 +19,11 @@ export async function GET() {
     path: "/",
     maxAge: 60 * 60 * 8
   });
-  response.headers.set("Cache-Control", "no-store, max-age=0");
+
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+
   return response;
 }

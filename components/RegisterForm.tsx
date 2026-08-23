@@ -2,6 +2,7 @@
 
 import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
+import { sanitizeInput } from "@/lib/security";
 import type { PublicUser, Role } from "@/lib/types";
 import { getErrorMessage } from "@/lib/utils";
 import {
@@ -37,10 +38,18 @@ export function RegisterForm() {
     event.preventDefault();
     setLoading(true);
     try {
+      const sanitizedName = sanitizeInput(form.name);
+      const sanitizedEmail = sanitizeInput(form.email);
+      const sanitizedPhone = sanitizeInput(form.phone);
+      const sanitizedLocation = sanitizeInput(form.location);
+
       const payload = {
-        ...form,
-        phone: form.phone || undefined,
-        location: form.location || undefined
+        role: form.role,
+        name: sanitizedName,
+        email: sanitizedEmail,
+        password: form.password,
+        phone: sanitizedPhone || undefined,
+        location: sanitizedLocation || undefined
       };
       const response = await api.post<PublicUser>("/auth/register", payload);
       toast.success(response.message);
