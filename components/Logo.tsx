@@ -1,4 +1,4 @@
-import { Wrench } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 interface LogoProps {
@@ -7,13 +7,13 @@ interface LogoProps {
 
 export function Logo({ compact = false }: LogoProps) {
   return (
-    <Link href="/" className="brand" aria-label="FixItNow home">
+    <Link href="/" className="brand" aria-label="nextED home">
       <span className="brand-mark" aria-hidden="true">
-        <Wrench size={20} strokeWidth={2.5} />
+        <Sparkles size={18} strokeWidth={2.5} />
       </span>
       {!compact && (
-        <span>
-          FixIt<span>Now</span>
+        <span className="brand-text">
+          next<span>ED</span>
         </span>
       )}
     </Link>

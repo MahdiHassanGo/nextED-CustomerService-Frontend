@@ -21,14 +21,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: { default: "FixItNow | Trusted Home Services", template: "%s | FixItNow" },
-  description: "Find and book trusted home-service professionals with secure payments and role-protected dashboards.",
-  applicationName: "FixItNow",
+  title: { default: "nextED | AI-Powered Study Abroad & Education Consulting", template: "%s | nextED" },
+  description: "NextED is the world's first AI-powered platform for study abroad. Course matching, university applications, live tracking, and post-arrival support.",
+  applicationName: "nextED",
   manifest: "/manifest.webmanifest",
   robots: { index: true, follow: true }
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0a192f" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#00142e" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

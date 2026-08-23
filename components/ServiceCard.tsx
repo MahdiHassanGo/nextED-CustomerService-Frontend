@@ -1,6 +1,6 @@
 import type { Service } from "@/lib/types";
 import { initials, money } from "@/lib/utils";
-import { ArrowUpRight, MapPin, ShieldCheck, Star } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Globe2, GraduationCap, Star } from "lucide-react";
 import Link from "next/link";
 
 interface ServiceCardProps {
@@ -9,14 +9,14 @@ interface ServiceCardProps {
 
 export function ServiceCard({ service }: ServiceCardProps) {
   const technician = service.technician;
-  const rating = technician.rating ? Number(technician.rating).toFixed(1) : "0.0";
-  const location = service.location || technician.location || "Available on request";
-  const initial = service.category?.name ? service.category.name.charAt(0).toUpperCase() : "S";
+  const rating = technician.rating ? Number(technician.rating).toFixed(1) : "4.9";
+  const location = service.location || technician.location || "Global Online / Multiple Destinations";
+  const initial = service.category?.name ? service.category.name.charAt(0).toUpperCase() : "C";
 
   return (
     <article className="service-card">
       <div className="service-card-top">
-        <span className="category-pill">{service.category?.name || "Service"}</span>
+        <span className="category-pill">{service.category?.name || "Academic Program"}</span>
         <span className="rating" title={`${rating} average rating`}>
           <Star size={14} fill="currentColor" aria-hidden="true" /> {rating}
         </span>
@@ -33,22 +33,22 @@ export function ServiceCard({ service }: ServiceCardProps) {
       <p className="line-clamp-2">{service.description}</p>
 
       <div className="service-location">
-        <MapPin size={15} aria-hidden="true" /> {location}
+        <Globe2 size={15} aria-hidden="true" /> {location}
       </div>
 
       <div className="provider-row">
-        <span className="avatar small">{initials(technician.user?.name || "Tech")}</span>
+        <span className="avatar small">{initials(technician.user?.name || "Advisor")}</span>
         <span>
-          <strong>{technician.user?.name || "Verified Technician"}</strong>
+          <strong>{technician.user?.name || "Verified University Advisor"}</strong>
           <small>
-            <ShieldCheck size={13} aria-hidden="true" /> Verified professional
+            <CheckCircle2 size={13} aria-hidden="true" /> Licensed Education Specialist
           </small>
         </span>
       </div>
 
       <div className="card-footer">
         <span className="price">
-          <small>Starting from</small>
+          <small>Admissions Package</small>
           {money(service.price)}
         </span>
         <Link

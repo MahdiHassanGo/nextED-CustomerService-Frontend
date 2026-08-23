@@ -6,7 +6,7 @@ import { api } from "@/lib/api-client";
 import { getSafeRedirect, sanitizeInput } from "@/lib/security";
 import type { PublicUser } from "@/lib/types";
 import { getErrorMessage } from "@/lib/utils";
-import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { Bot, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -30,7 +30,7 @@ export function LoginForm() {
       };
       const response = await api.post<{ user: PublicUser }>("/auth/login", sanitizedPayload);
       setUser(response.data.user);
-      toast.success("Welcome back. Your secure session is active.");
+      toast.success("Welcome back to nextED. Your session is active.");
       const requested = searchParams.get("next");
       const destination = getSafeRedirect(requested, "/dashboard");
       router.replace(destination);
@@ -55,7 +55,7 @@ export function LoginForm() {
             maxLength={180}
             value={form.email}
             onChange={(event) => setForm({ ...form, email: event.target.value })}
-            placeholder="you@example.com"
+            placeholder="student@example.com"
           />
         </div>
       </label>
@@ -88,15 +88,15 @@ export function LoginForm() {
         className="button button-primary button-full button-large"
         disabled={loading}
       >
-        {loading ? "Signing in securely…" : "Sign in"}
+        {loading ? "Signing in securely…" : "Sign In to nextED"}
       </button>
 
       <p className="auth-security">
-        <ShieldCheck size={16} /> Authentication tokens are stored only in HTTP-only cookies.
+        <ShieldCheck size={16} /> Authentication tokens are securely encrypted in HTTP-only cookies.
       </p>
 
       <p className="auth-switch">
-        New to FixItNow? <Link href="/auth/register">Create an account</Link>
+        New to nextED? <Link href="/auth/register">Create a free student account</Link>
       </p>
     </form>
   );

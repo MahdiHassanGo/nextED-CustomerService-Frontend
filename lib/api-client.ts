@@ -30,7 +30,7 @@ async function request<T>(path: string, options: ApiOptions = {}): Promise<ApiEn
   if (!SAFE_METHODS.has(method)) {
     headers.set("Content-Type", "application/json");
     headers.set("X-CSRF-Token", await getCsrfToken());
-    headers.set("X-Requested-With", "FixItNow-Web");
+    headers.set("X-Requested-With", "NextED-Web");
   }
 
   const response = await fetch(`/api/backend${path.startsWith("/") ? path : `/${path}`}`, {

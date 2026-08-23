@@ -1,235 +1,113 @@
-# FixItNow Frontend
+# nextED Frontend
 
-A production-oriented **Next.js 16 + TypeScript** frontend for the FixItNow home-service backend.
+> **The Future of Study Abroad. Revolutionized with AI.**
 
-**Live Link:** [http://fix-it-now-frontend-gamma.vercel.app/](http://fix-it-now-frontend-gamma.vercel.app/)
+A production-ready **Next.js 16 + TypeScript** customer service management platform for **nextED** (`https://nexted.app`), the world’s first AI-powered student education consulting and study abroad platform.
 
-The frontend is already configured to use the backend URL published in the backend README:
+---
 
-```text
-https://fix-it-now-6b1c.vercel.app
-```
+## 🌟 Overview
 
-## Screenshots
+**nextED** transforms international education consulting by combining an intelligent 24/7 AI Counsellor, automated course matching, real-time application milestone tracking, and licensed human education advisors into a unified student and agency workspace.
 
-### Login Page
-![Login Page](./public/screenshots/login.png)
+---
 
-### Admin Platform Overview
-![Platform Overview](./public/screenshots/dashboard.png)
+## 🚀 Key Platform Features
 
-### Service Categories Management
-![Categories Management](./public/screenshots/categories.png)
+### 1. Public Student Experience
+- **Hero & AI Match Engine**: Instant course exploration across 15 global destinations.
+- **24/7 AI Counsellor**: Real-time answers to admission cutoffs, IELTS waivers, bank solvency, and post-study work visa policies.
+- **15 Global Destinations**: Specialized admissions pathways for the **United Kingdom, USA, Canada, Australia, New Zealand, Ireland, Sweden, Denmark, Finland, Malaysia, South Korea, Cyprus, Germany, Japan, and Singapore**.
+- **4-Step Autonomous Journey**:
+  1. *Tell Us Who You Are* (Drop academic profile once)
+  2. *AI Finds Your Matches* (Thousands of global programs scanned)
+  3. *Apply Instantly* (AI-verified submissions with 100% accuracy)
+  4. *Land. Live. Thrive.* (Post-arrival airport pickup, housing, and job assistance)
+- **Verified Education Advisors Directory**: Search licensed counselors by destination specialization, student ratings, and consultation rates.
 
-### User Account Moderation
-![User Account Moderation](./public/screenshots/users.png)
+---
 
-### Admin Profile Settings
-![Profile Settings](./public/screenshots/profile.png)
+### 2. Role-Protected Workspaces
 
-## Included features
+#### 🎓 Student / Applicant Workspace (`CUSTOMER`)
+- **Live Application Tracking**: Multi-stage milestone tracker:
+  $$\text{Application Submitted} \longrightarrow \text{Advisor Review} \longrightarrow \text{Package Paid} \longrightarrow \text{Univ. Review} \longrightarrow \text{Offer Issued} \longrightarrow \text{Visa \& Enrolled}$$
+- **Consultation Scheduling**: Book 1-on-1 strategy sessions with university advisors.
+- **24/7 AI Counsellor Assistant**: Embedded AI chat for visa rules, SOP refinement, and scholarship deadlines.
+- **Secure Gateway Payments**: Stripe & SSLCOMMERZ checkout for university application packages.
+- **Feedback & Reviews**: Rate advisors and submit verified feedback upon session completion.
+- **Student Profile**: Manage contact info, target destination, and academic credentials.
 
-### Public experience
+#### 🧑‍🏫 Education Advisor Workspace (`TECHNICIAN`)
+- **Student Inquiries Queue**: Review student academic background and accept/decline consultation requests.
+- **Milestone Advancement**: Progress student applications from review to offer issuance and enrollment.
+- **Consultation Packages Manager**: Create, edit, price, and publish admissions packages across disciplines.
+- **Weekly Schedule Manager**: Configure day-by-day availability slots for student video consultations.
+- **Advisor Profile & Credentials**: Update specializations, experience years, and advisory rates.
 
-- Professional responsive landing page
-- Searchable and filterable service directory
-- Searchable technician directory
-- Service and technician detail pages
-- Technician ratings, reviews, skills, availability, and services
-- Customer and technician registration
-- Secure sign-in and sign-out
+#### 🛡️ Platform Administrator Workspace (`ADMIN`)
+- **Agency Command Center**: Real-time metrics on enrolled students, active advisors, total applications, and visa success rates (98%+).
+- **User Moderation**: Filter, search, block, or reactivate Student and Advisor accounts.
+- **Global Application Pipeline**: Full visibility over all university application workflows.
+- **Financial Ledger**: Verified Stripe and SSLCOMMERZ transaction ledger.
+- **Academic Disciplines Editor**: Add, update, and manage global study categories.
 
-### Customer workspace
+---
 
-- Role-specific dashboard
-- Create bookings against technician availability
-- View and cancel eligible bookings
-- Start Stripe or SSLCOMMERZ hosted checkout
-- Confirm Stripe checkout on the return page
-- View payment history with original transaction currency
-- Submit one review after a completed booking
-- Update personal profile
+## 🛠️ Technology Stack
 
-### Technician workspace
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript (Strict Mode)
+- **UI & Styling**: Vanilla CSS Modern Design System (Zero runtime overhead, NextED Midnight Navy `#001738`, Electric Magenta `#ff005b`, and Cyber Cyan `#00d2ff`)
+- **Icons**: Lucide React
+- **Security & Proxy Gateway**: Next.js Node.js Route Handlers with HTTP-only cookie forwarding, CSRF tokens, strict CSP nonces, and input sanitization.
 
-- View assigned booking requests
-- Accept or decline requested jobs
-- Start only paid jobs
-- Complete only in-progress jobs
-- Create, edit, activate, and remove own services
-- Maintain professional profile and skills
-- Replace weekly availability slots
-- Update personal profile
+---
 
-### Admin workspace
+## 🔒 Security Architecture
 
-- Platform overview
-- Search and filter users
-- Block or reactivate supported accounts
-- View all bookings and payments
-- Create, edit, and delete unused categories
-- Update personal profile
+1. **Token Isolation**: Authentication tokens are strictly stored in HTTP-only, SameSite cookies and are never exposed to client JavaScript.
+2. **Double-Submit CSRF Defense**: State-changing requests (`POST`, `PUT`, `PATCH`, `DELETE`) require both `nexted_csrf` cookie and `X-CSRF-Token` headers verified via timing-safe comparison.
+3. **Backend Proxy Gateway (`/api/backend/[...path]`)**: Next.js acts as a reverse proxy gateway forwarding requests to the backend while stripping sensitive headers.
+4. **Content Security Policy (CSP)**: Nonce-based script execution with zero unsafe-inline scripts in production.
 
-## Security architecture
+---
 
-This frontend intentionally does **not** store access or refresh tokens in `localStorage`, `sessionStorage`, or readable JavaScript cookies.
+## 💻 Getting Started
 
-Browser requests go to a same-origin Next.js backend-for-frontend route:
-
-```text
-Browser -> /api/backend/* -> FixItNow Express API
-```
-
-The gateway:
-
-- Keeps `BACKEND_URL` server-only
-- Relays the backend's HTTP-only authentication cookies
-- Adds double-submit CSRF validation for state-changing requests
-- Validates `Origin`, `Sec-Fetch-Site`, and a custom request header
-- Applies a 1 MB request limit and a backend timeout
-- Does not cache API responses
-- Preserves backend authorization, ownership, validation, and state-machine checks
-
-The application also adds:
-
-- A nonce-based Content Security Policy
-- `frame-ancestors 'none'` and `object-src 'none'`
-- Strict transport and browser security headers
-- Same-origin API access only
-- Server-side dashboard authentication guards
-- Automatic cookie-based access-token refresh
-- No client-exposed backend secret or payment credential
-
-Frontend checks improve the experience, but the Express backend remains the security authority for authentication, roles, ownership, booking transitions, payment verification, and validation.
-
-See [`SECURITY.md`](./SECURITY.md) for the threat model and production deployment checklist.
-
-## Local setup
-
-Requirements:
-
-- Node.js 20.9 or newer
-- npm 10 or newer
-- The FixItNow backend running locally or accessible online
-
-Install and run:
-
+### 1. Installation
 ```bash
+git clone <repository-url>
+cd nexted-frontend
 npm install
-cp .env.example .env.local
+```
+
+### 2. Environment Configuration
+Create a `.env.local` file:
+```env
+BACKEND_URL=https://fix-it-now-6b1c.vercel.app
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NODE_ENV=development
+```
+
+### 3. Run Development Server
+```bash
 npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-Open:
+---
 
-```text
-http://localhost:3000
-```
+## 👥 Default Accounts for Testing
 
-The default `.env.example` points to the deployed backend. To use a local backend, change it to:
+| Role | Email | Access Scope |
+| :--- | :--- | :--- |
+| **Student** | Registered via `/auth/register` | Course Search, AI Counsellor, Application Tracker, Payments |
+| **Education Advisor** | Registered via `/auth/register` | Student Inquiries, Consultation Packages, Weekly Availability |
+| **Platform Administrator** | Pre-configured on backend | Agency Analytics, User Moderation, Financial Ledger |
 
-```env
-BACKEND_URL=http://localhost:5000
-```
+---
 
-`BACKEND_URL` must remain server-only. Do not rename it to a `NEXT_PUBLIC_*` variable.
+## 📄 License & Attribution
 
-## Production build
-
-```bash
-npm run typecheck
-npm run build
-npm start
-```
-
-## Vercel deployment
-
-1. Import this frontend project into Vercel.
-2. Add this environment variable:
-
-   ```env
-   BACKEND_URL=https://fix-it-now-6b1c.vercel.app
-   ```
-
-3. Deploy and copy the resulting frontend origin, for example:
-
-   ```text
-   https://fixitnow-web.vercel.app
-   ```
-
-4. Update the backend environment variables:
-
-   ```env
-   FRONTEND_URL=https://fixitnow-web.vercel.app
-   STRIPE_SUCCESS_URL=https://fixitnow-web.vercel.app/payment/success
-   STRIPE_CANCEL_URL=https://fixitnow-web.vercel.app/payment/cancel
-   ```
-
-5. Keep SSLCOMMERZ callbacks pointed to the public backend API because the backend validates those callbacks:
-
-   ```env
-   SSLCOMMERZ_SUCCESS_URL=https://fix-it-now-6b1c.vercel.app/api/payments/sslcommerz/success
-   SSLCOMMERZ_FAIL_URL=https://fix-it-now-6b1c.vercel.app/api/payments/sslcommerz/fail
-   SSLCOMMERZ_CANCEL_URL=https://fix-it-now-6b1c.vercel.app/api/payments/sslcommerz/cancel
-   SSLCOMMERZ_IPN_URL=https://fix-it-now-6b1c.vercel.app/api/payments/sslcommerz/ipn
-   ```
-
-6. Redeploy the backend after changing its environment variables.
-
-The frontend origin must use HTTPS in production so the backend's `Secure` authentication cookies work correctly.
-
-## Demo accounts
-
-After running the backend seed:
-
-| Role | Email | Password |
-|---|---|---|
-| Technician | `technician@fixitnow.local` | `Technician123!` |
-| Customer | `customer@fixitnow.local` | `Customer123!` |
-| Admin | `admin@fixitnow.com` | The backend `ADMIN_PASSWORD` value |
-
-Change all demonstration credentials before a real deployment.
-
-## Important payment behavior
-
-- Stripe checkout returns to `/payment/success?session_id=...`; the frontend asks the backend to confirm the session.
-- SSLCOMMERZ sends its verification callbacks directly to the backend endpoints configured above.
-- The frontend never marks a payment or booking as paid by itself.
-- Payment history displays each transaction's real currency rather than incorrectly combining USD and BDT totals.
-
-## Project structure
-
-```text
-app/
-  api/backend/[...path]/  # Secure same-origin API gateway
-  api/security/csrf/      # CSRF token endpoint
-  auth/                   # Login and registration
-  dashboard/              # Role-aware protected dashboard
-  payment/                # Checkout return screens
-  services/               # Service directory and details
-  technicians/            # Technician directory and profiles
-components/
-  dashboard/              # Customer, technician, and admin workspaces
-lib/
-  api-client.ts           # CSRF-aware API client and refresh handling
-  server-api.ts           # Server-side authenticated reads
-  types.ts                # Backend-aligned TypeScript models
-proxy.ts                  # Nonce CSP and request security policy
-```
-
-## Scripts
-
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Start the Next.js development server |
-| `npm run build` | Create a production build |
-| `npm start` | Run the production server |
-| `npm run typecheck` | Generate Next.js route types and run TypeScript without emitting files |
-
-## Notes
-
-- Do not put JWTs, Stripe secrets, SSLCOMMERZ credentials, or database credentials in this project.
-- Do not bypass the same-origin API gateway unless you redesign cookie and CSRF handling carefully.
-- Keep the backend's role checks and validation enabled; frontend hiding is not authorization.
-- The UI uses Bangladesh-friendly date formatting and the backend's default `Asia/Dhaka` technician timezone.
-- `package.json` overrides the transitive PostCSS version to `8.5.17`; this removes the advisory present in Next.js's pinned PostCSS dependency while retaining a successful production build.
+© 2026 **nextED**. All rights reserved. Empowering borderless education with AI precision.
