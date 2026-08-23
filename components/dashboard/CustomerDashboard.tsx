@@ -5,6 +5,7 @@ import { Loading } from "@/components/Loading";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
+import { getSafeExternalUrl, sanitizeInput } from "@/lib/security";
 import type { Booking, Payment, PaymentProvider, PaymentSession, PublicUser, Review } from "@/lib/types";
 import { formatDate, getErrorMessage, money } from "@/lib/utils";
 import {
@@ -81,10 +82,11 @@ export function CustomerDashboard({ user, activeTab }: CustomerDashboardProps) {
         bookingId: paymentBooking.id,
         provider
       });
-      if (!response.data.checkoutUrl) {
-        throw new Error("The payment provider did not return a checkout URL.");
+      const checkoutUrl = getSafeExternalUrl(response.data.checkoutUrl);
+      if (!checkoutUrl) {
+        throw new Error("Invalid or insecure checkout URL returned by payment provider.");
       }
-      window.location.assign(response.data.checkoutUrl);
+      window.location.assign(checkoutUrl);
     } catch (error) {
       toast.error(getErrorMessage(error));
       setWorkingId(null);
@@ -96,10 +98,11 @@ export function CustomerDashboard({ user, activeTab }: CustomerDashboardProps) {
     if (!reviewBooking) return;
     setWorkingId(reviewBooking.id);
     try {
+      const sanitizedComment = sanitizeInput(reviewForm.comment);
       const response = await api.post<Review>("/reviews", {
         bookingId: reviewBooking.id,
         rating: reviewForm.rating,
-        comment: reviewForm.comment || undefined
+        comment: sanitizedComment || undefined
       });
       toast.success(response.message);
       setReviewBooking(null);

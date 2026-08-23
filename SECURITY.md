@@ -1,79 +1,72 @@
 # Security Guide
 
-## Security model
+## Security Model
 
-FixItNow uses defense in depth:
+FixItNow uses defense-in-depth across the full application stack:
 
-1. The Express API authenticates users, enforces roles and ownership, validates input, verifies payments, and controls booking-state transitions.
-2. The Next.js application exposes a same-origin backend-for-frontend gateway instead of exposing authentication tokens to browser JavaScript.
-3. The browser sends state-changing requests only with same-origin, CSRF, and custom-header proof.
-4. Security headers reduce script injection, framing, MIME sniffing, and unnecessary browser permissions.
+1. **Express API**: Authenticates users, enforces roles and resource ownership, validates payload structure, verifies payment callbacks, and controls booking lifecycle transitions.
+2. **Next.js Backend-for-Frontend (BFF) Gateway**: Proxies API requests while isolating authentication cookies from browser JavaScript.
+3. **Active Next.js Security Middleware**: Enforces cryptographic per-request nonces, Content Security Policy (CSP), and modern browser security headers across all page routes.
+4. **Hardened CSRF Protection**: Validates same-origin headers, custom request tokens, and cryptographic double-submit cookies with automatic client token healing.
+5. **Open Redirect & URL Validation**: Validates all internal navigation and external hosted checkout redirects against allowlists and protocols.
+6. **Input Sanitization**: Normalizes inputs to strip control characters and null bytes before submission.
 
-The frontend is not a replacement for backend authorization. Every protected operation must continue to be rejected by the backend when the role, owner, resource state, or payload is invalid.
+The frontend is not a replacement for backend authorization. Every protected operation continues to be rejected by the backend when the role, owner, resource state, or payload is invalid.
 
-## Authentication
+## Authentication & Session Security
 
-- Access and refresh JWTs remain in backend-issued HTTP-only cookies.
-- Tokens are never written to `localStorage` or `sessionStorage`.
-- The API client retries an expired authenticated request once through `/auth/refresh`.
-- Logout is performed by the backend and clears both authentication cookies.
-- Production must use HTTPS because the backend uses `Secure` cookies.
+- **Cookie Storage**: Access and refresh JWTs remain exclusively in backend-issued `HTTP-only`, `SameSite=Lax`/`SameSite=Strict`, `Secure` cookies.
+- **No Token Leaks**: Tokens are never stored in `localStorage`, `sessionStorage`, or JavaScript memory variables.
+- **Silent JWT Refresh**: The API client automatically handles 401 Unauthorized responses by attempting a single refresh via `/auth/refresh`.
+- **Session Termination**: Logout requests trigger backend cookie clearance and immediately purge frontend CSRF caches and user state.
 
-## CSRF protection
+## CSRF Protection & Auto-Healing
 
-Unsafe requests require all of the following:
+State-changing requests (`POST`, `PUT`, `PATCH`, `DELETE`) require all of the following validations:
 
-- Exact same-origin `Origin`
-- `Sec-Fetch-Site` of `same-origin` when the browser supplies it
-- `X-Requested-With: FixItNow-Web`
-- A random CSRF value in both an HTTP-only cookie and `X-CSRF-Token`
-- Constant-time comparison in the gateway
+- Exact match between `Origin` and expected application host.
+- `Sec-Fetch-Site` header restricted to `same-origin` or `same-site`.
+- `X-Requested-With: FixItNow-Web` custom header.
+- A cryptographic random token present in both an HTTP-only cookie (`__Host-fixit_csrf` in production) and the `X-CSRF-Token` header.
+- Constant-time string comparison (`timingSafeEqual`) in the gateway.
+- **Auto-Healing**: If a 403 Forbidden CSRF error is encountered by client-side JavaScript, the API client automatically fetches a new CSRF token and retries the operation once seamlessly.
 
-The CSRF endpoint and gateway responses are never cached.
+The CSRF endpoint and gateway responses are strictly configured with `Cache-Control: no-store, no-cache, must-revalidate, max-age=0`.
 
-## Browser security headers
+## Browser Security Headers & Middleware
 
-The application configures:
+The Next.js security middleware (`middleware.ts`) and `next.config.ts` configure:
 
-- Nonce-based Content Security Policy
-- Strict Transport Security
-- `X-Frame-Options: DENY`
-- `frame-ancestors 'none'`
-- `X-Content-Type-Options: nosniff`
-- Strict referrer policy
-- Cross-origin opener/resource policies
-- Restricted browser permissions
+- **Content Security Policy (CSP)**: Nonce-based script and style policy, `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, and production `upgrade-insecure-requests`.
+- **Strict-Transport-Security (HSTS)**: `max-age=63072000; includeSubDomains; preload`.
+- **X-Frame-Options**: `DENY` (Clickjacking prevention).
+- **X-Content-Type-Options**: `nosniff` (MIME sniffing prevention).
+- **Referrer-Policy**: `strict-origin-when-cross-origin`.
+- **Permissions-Policy**: Restricted access for camera, microphone, geolocation, usb, accelerometer, etc.
+- **Cross-Origin Policies**: `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Resource-Policy: same-origin`.
+- **X-Permitted-Cross-Domain-Policies**: `none` (prevents cross-domain policy files).
+- **X-XSS-Protection**: `0` (disables legacy buggy browser auditors in favor of CSP).
+- **X-DNS-Prefetch-Control**: `off`.
 
-## Payment rules
+## API Gateway & Path Traversal Protections
 
-- Checkout sessions are created only by the backend.
-- Amounts are derived and checked by the backend.
-- Stripe return data is confirmed with the backend.
-- SSLCOMMERZ verification callbacks go directly to the backend.
-- The frontend never changes a booking to `PAID` by itself.
-- Payment records retain their original currencies.
+The BFF gateway (`/api/backend/[...path]`):
+- Validates path segments against directory traversal (`..`, `.`, `%2e`, null bytes, control characters).
+- Restricts payload sizes to a maximum of 1 MB (`MAX_BODY_BYTES`).
+- Filters incoming headers and strips sensitive upstream headers (`server`, `x-powered-by`).
+- Injects `x-forwarded-for`, `x-forwarded-host`, and `x-forwarded-proto`.
 
-## Deployment checklist
+## Payment & Redirect Security
 
-- [ ] Use HTTPS for both frontend and backend.
-- [ ] Keep `BACKEND_URL` server-only.
-- [ ] Configure the backend `FRONTEND_URL` with the exact deployed frontend origin.
-- [ ] Configure Stripe success and cancellation URLs for the deployed frontend.
-- [ ] Keep SSLCOMMERZ callback URLs on the deployed backend.
-- [ ] Store JWT and payment secrets only in the backend host's secret manager.
-- [ ] Replace all seeded passwords.
-- [ ] Use strong, independent JWT secrets.
-- [ ] Verify Stripe webhook signatures and SSLCOMMERZ validation in production.
-- [ ] Run `npm audit` and `npm run build` before deployment.
-- [ ] Review backend and frontend logs without recording tokens, passwords, or payment secrets.
-- [ ] Apply database backups, monitoring, rate limiting, and alerting at the production infrastructure layer.
+- **Validation**: Checkout URLs returned from payment endpoints are verified with `getSafeExternalUrl` to strictly enforce `https:` schemes before triggering browser navigation.
+- **Internal Redirection**: Login and next-page redirections are validated with `getSafeRedirect` to prevent open-redirect exploits.
+- **State Enforcement**: Checkout sessions and final payment statuses are verified exclusively by the backend via webhook and callback signatures.
 
-## Dependency status at delivery
+## Deployment Checklist
 
-The delivered dependency tree was checked with:
-
-```bash
-npm audit --omit=dev --audit-level=high
-```
-
-It reported zero known vulnerabilities after applying the documented PostCSS override. Re-run the audit whenever dependencies or the lockfile change.
+- [ ] Ensure HTTPS is enabled for both frontend and backend domains.
+- [ ] Configure `BACKEND_URL` securely on the server.
+- [ ] Ensure backend `FRONTEND_URL` matches the deployed frontend origin.
+- [ ] Configure Stripe webhook secret and SSLCOMMERZ merchant validation.
+- [ ] Review environment variables to prevent secret leakage in client builds.
+- [ ] Run `npm audit` and verify dependency health before each release.

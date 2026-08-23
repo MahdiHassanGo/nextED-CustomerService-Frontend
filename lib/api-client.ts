@@ -16,12 +16,13 @@ export class ApiClientError extends Error {
 type ApiOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
   retryAuth?: boolean;
+  retryCsrf?: boolean;
 };
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 async function request<T>(path: string, options: ApiOptions = {}): Promise<ApiEnvelope<T>> {
-  const { body, retryAuth: _retryAuth, ...requestOptions } = options;
+  const { body, retryAuth = true, retryCsrf = true, ...requestOptions } = options;
   const method = (requestOptions.method ?? "GET").toUpperCase();
   const headers = new Headers(requestOptions.headers);
   headers.set("Accept", "application/json");
@@ -46,9 +47,31 @@ async function request<T>(path: string, options: ApiOptions = {}): Promise<ApiEn
     ? ((await response.json()) as ApiEnvelope<T>)
     : ({ success: response.ok, statusCode: response.status, message: await response.text(), data: null as T } satisfies ApiEnvelope<T>);
 
-  if (response.status === 401 && options.retryAuth !== false && !path.startsWith("/auth/refresh") && !path.startsWith("/auth/login")) {
+  // Handle 403 CSRF / security token invalidation by refreshing CSRF token once
+  if (
+    response.status === 403 &&
+    !SAFE_METHODS.has(method) &&
+    retryCsrf &&
+    !path.startsWith("/auth/logout")
+  ) {
     try {
-      await request("/auth/refresh", { method: "POST", body: {}, retryAuth: false });
+      await getCsrfToken(true);
+      return request<T>(path, { ...options, retryCsrf: false });
+    } catch {
+      clearCsrfToken();
+    }
+  }
+
+  // Handle 401 Unauthorized by attempting session refresh once
+  if (
+    response.status === 401 &&
+    retryAuth &&
+    !path.startsWith("/auth/refresh") &&
+    !path.startsWith("/auth/login") &&
+    !path.startsWith("/auth/register")
+  ) {
+    try {
+      await request("/auth/refresh", { method: "POST", body: {}, retryAuth: false, retryCsrf: false });
       return request<T>(path, { ...options, retryAuth: false });
     } catch {
       clearCsrfToken();

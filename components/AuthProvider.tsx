@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api-client";
+import { clearCsrfToken } from "@/lib/csrf";
 import type { PublicUser } from "@/lib/types";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api.post("/auth/logout", {});
     } finally {
+      clearCsrfToken();
       setUser(null);
     }
   }, []);

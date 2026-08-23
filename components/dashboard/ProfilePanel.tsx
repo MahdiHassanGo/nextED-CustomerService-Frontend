@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
+import { sanitizeInput } from "@/lib/security";
 import type { PublicUser } from "@/lib/types";
 import { getErrorMessage, initials, roleLabel } from "@/lib/utils";
 import { Mail, MapPin, Phone, Save, ShieldCheck, UserRound } from "lucide-react";
@@ -27,10 +28,13 @@ export function ProfilePanel({ user, onUpdated }: ProfilePanelProps) {
     event.preventDefault();
     setSaving(true);
     try {
+      const sanitizedName = sanitizeInput(form.name);
+      const sanitizedPhone = sanitizeInput(form.phone);
+      const sanitizedLocation = sanitizeInput(form.location);
       const response = await api.patch<PublicUser>("/users/me", {
-        name: form.name,
-        phone: form.phone || null,
-        location: form.location || null
+        name: sanitizedName,
+        phone: sanitizedPhone || null,
+        location: sanitizedLocation || null
       });
       onUpdated({ ...user, ...response.data });
       setUser({ ...user, ...response.data });

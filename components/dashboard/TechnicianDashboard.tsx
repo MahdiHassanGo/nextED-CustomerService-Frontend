@@ -5,6 +5,7 @@ import { Loading } from "@/components/Loading";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
+import { sanitizeInput } from "@/lib/security";
 import type {
   Availability,
   Booking,
@@ -170,16 +171,20 @@ export function TechnicianDashboard({ user, activeTab, onUserUpdated }: Technici
     if (!serviceModal) return;
     setWorkingId(serviceModal.id ?? "new-service");
 
+    const sanitizedTitle = sanitizeInput(serviceModal.title);
+    const sanitizedDescription = sanitizeInput(serviceModal.description);
+    const sanitizedLocation = sanitizeInput(serviceModal.location);
+
     const basePayload = {
-      title: serviceModal.title,
-      description: serviceModal.description,
+      title: sanitizedTitle,
+      description: sanitizedDescription,
       price: Number(serviceModal.price),
       categoryId: serviceModal.categoryId
     };
 
     const payload = serviceModal.id
-      ? { ...basePayload, location: serviceModal.location || null, isActive: serviceModal.isActive }
-      : { ...basePayload, ...(serviceModal.location ? { location: serviceModal.location } : {}) };
+      ? { ...basePayload, location: sanitizedLocation || null, isActive: serviceModal.isActive }
+      : { ...basePayload, ...(sanitizedLocation ? { location: sanitizedLocation } : {}) };
 
     try {
       const response = serviceModal.id
@@ -214,12 +219,19 @@ export function TechnicianDashboard({ user, activeTab, onUserUpdated }: Technici
     event.preventDefault();
     setWorkingId("profile");
     try {
+      const sanitizedBio = sanitizeInput(profileForm.bio);
+      const sanitizedLocation = sanitizeInput(profileForm.location);
+      const sanitizedSkills = profileForm.skills
+        .split(",")
+        .map((s) => sanitizeInput(s))
+        .filter(Boolean);
+
       const response = await api.put<TechnicianProfile>("/technician/profile", {
-        bio: profileForm.bio || null,
-        skills: profileForm.skills.split(",").map((s) => s.trim()).filter(Boolean),
+        bio: sanitizedBio || null,
+        skills: sanitizedSkills,
         experienceYears: Number(profileForm.experienceYears),
         pricePerHour: Number(profileForm.pricePerHour),
-        location: profileForm.location || null,
+        location: sanitizedLocation || null,
         timezone: profileForm.timezone
       });
       setProfile(response.data);

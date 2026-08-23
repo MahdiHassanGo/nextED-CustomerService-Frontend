@@ -5,6 +5,7 @@ import { Loading } from "@/components/Loading";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
+import { sanitizeInput } from "@/lib/security";
 import type { Booking, Category, Payment, PublicUser } from "@/lib/types";
 import { formatDate, getErrorMessage, initials, money, roleLabel } from "@/lib/utils";
 import {
@@ -105,9 +106,11 @@ export function AdminDashboard({ user, activeTab }: AdminDashboardProps) {
     if (!categoryModal) return;
     setWorkingId(categoryModal.id ?? "new-category");
     try {
+      const sanitizedName = sanitizeInput(categoryModal.name);
+      const sanitizedDescription = sanitizeInput(categoryModal.description);
       const payload = {
-        name: categoryModal.name,
-        description: categoryModal.description || undefined
+        name: sanitizedName,
+        description: sanitizedDescription || undefined
       };
       const response = categoryModal.id
         ? await api.patch<Category>(`/admin/categories/${categoryModal.id}`, payload)
