@@ -1,7 +1,10 @@
 import { TechniciansPageClient } from "@/components/TechniciansPageClient";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Find Professionals", description: "Search trusted technicians by skill, location, rating, experience, and hourly rate." };
+export const metadata: Metadata = {
+  title: "Global Education Advisors & Consultants",
+  description: "Connect with certified university admissions advisors, visa counselors, and study abroad consultants."
+};
 export const dynamic = "force-dynamic";
 
 export default function TechniciansPage() {

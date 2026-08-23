@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function GET() {
   const token = randomBytes(32).toString("base64url");
   const production = process.env.NODE_ENV === "production";
-  const cookieName = production ? "__Host-fixit_csrf" : "fixit_csrf";
+  const cookieName = production ? "__Host-nexted_csrf" : "nexted_csrf";
 
   const response = NextResponse.json({ token });
   response.cookies.set({

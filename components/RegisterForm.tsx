@@ -6,14 +6,16 @@ import { sanitizeInput } from "@/lib/security";
 import type { PublicUser, Role } from "@/lib/types";
 import { getErrorMessage } from "@/lib/utils";
 import {
-  BriefcaseBusiness,
+  Briefcase,
   Eye,
   EyeOff,
+  GraduationCap,
   LockKeyhole,
   Mail,
   MapPin,
   Phone,
   ShieldCheck,
+  Sparkles,
   UserRound
 } from "lucide-react";
 import Link from "next/link";
@@ -52,7 +54,7 @@ export function RegisterForm() {
         location: sanitizedLocation || undefined
       };
       const response = await api.post<PublicUser>("/auth/register", payload);
-      toast.success(response.message);
+      toast.success(response.message || "Account created! You can now sign in.");
       router.push("/auth/login");
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -74,10 +76,10 @@ export function RegisterForm() {
             checked={form.role === "CUSTOMER"}
             onChange={() => setForm({ ...form, role: "CUSTOMER" })}
           />
-          <UserRound size={22} />
+          <GraduationCap size={22} />
           <span>
-            <strong>Customer</strong>
-            <small>Book and review services</small>
+            <strong>Student / Applicant</strong>
+            <small>Find courses & book advisor consultations</small>
           </span>
         </label>
 
@@ -89,10 +91,10 @@ export function RegisterForm() {
             checked={form.role === "TECHNICIAN"}
             onChange={() => setForm({ ...form, role: "TECHNICIAN" })}
           />
-          <BriefcaseBusiness size={22} />
+          <Briefcase size={22} />
           <span>
-            <strong>Technician</strong>
-            <small>Publish services and manage jobs</small>
+            <strong>Education Advisor</strong>
+            <small>Advise students & manage application packages</small>
           </span>
         </label>
       </fieldset>
@@ -124,7 +126,7 @@ export function RegisterForm() {
             autoComplete="email"
             value={form.email}
             onChange={(event) => setForm({ ...form, email: event.target.value })}
-            placeholder="you@example.com"
+            placeholder="student@example.com"
           />
         </div>
       </label>
@@ -142,14 +144,14 @@ export function RegisterForm() {
               autoComplete="tel"
               value={form.phone}
               onChange={(event) => setForm({ ...form, phone: event.target.value })}
-              placeholder="01XXXXXXXXX"
+              placeholder="e.g. +44 20 7946 0912"
             />
           </div>
         </label>
 
         <label className="field">
           <span>
-            Location <small>(optional)</small>
+            Location / Country <small>(optional)</small>
           </span>
           <div className="input-icon">
             <MapPin size={17} />
@@ -159,7 +161,7 @@ export function RegisterForm() {
               autoComplete="address-level2"
               value={form.location}
               onChange={(event) => setForm({ ...form, location: event.target.value })}
-              placeholder="Dhaka"
+              placeholder="e.g. London / Dhaka"
             />
           </div>
         </label>
@@ -190,7 +192,7 @@ export function RegisterForm() {
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
-        <small>Must include at least one letter and one number.</small>
+        <small style={{ color: "var(--muted)" }}>Must include at least one letter and one number.</small>
       </label>
 
       <button
@@ -200,11 +202,11 @@ export function RegisterForm() {
       >
         {loading
           ? "Creating account…"
-          : `Create ${form.role === "CUSTOMER" ? "customer" : "technician"} account`}
+          : `Create ${form.role === "CUSTOMER" ? "student" : "advisor"} account`}
       </button>
 
       <p className="auth-security">
-        <ShieldCheck size={16} /> Admin registration is intentionally disabled for security.
+        <ShieldCheck size={16} /> Admin registration is managed directly by platform administrators.
       </p>
 
       <p className="auth-switch">

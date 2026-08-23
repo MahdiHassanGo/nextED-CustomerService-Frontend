@@ -16,7 +16,7 @@ export async function getCsrfToken(force = false): Promise<string> {
     cache: "no-store",
     headers: {
       Accept: "application/json",
-      "X-Requested-With": "FixItNow-Web"
+      "X-Requested-With": "NextED-Web"
     }
   })
     .then(async (response) => {

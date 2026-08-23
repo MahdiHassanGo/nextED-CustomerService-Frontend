@@ -1,54 +1,25 @@
 import { LoginForm } from "@/components/LoginForm";
-import { BadgeCheck, ShieldCheck, Wrench } from "lucide-react";
+import { Bot, CheckCircle2, Globe2, GraduationCap, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-export const metadata: Metadata = { title: "Sign In" };
+export const metadata: Metadata = { title: "Sign In to nextED" };
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   return (
     <section className="auth-page">
-      <aside className="auth-side">
-        <div className="auth-side-content">
-          <span className="eyebrow light-eyebrow">Welcome back</span>
-          <h1>Manage every service request from one secure place.</h1>
-          <p>Sign in once and automatically access the correct workspace based on your backend role.</p>
-          <div className="auth-benefits">
-            <span>
-              <ShieldCheck aria-hidden="true" />
-              <span>
-                <strong>Secure cookie sessions</strong>
-                <small>No access tokens are stored in local storage.</small>
-              </span>
-            </span>
-            <span>
-              <BadgeCheck aria-hidden="true" />
-              <span>
-                <strong>Role-aware workspace</strong>
-                <small>Dedicated Customer, Technician, and Admin dashboards.</small>
-              </span>
-            </span>
-            <span>
-              <Wrench aria-hidden="true" />
-              <span>
-                <strong>Complete booking lifecycle</strong>
-                <small>Request, accept, pay, complete, and review services.</small>
-              </span>
-            </span>
-          </div>
+      <div className="auth-card">
+        <div className="auth-header">
+          <span className="eyebrow muted-eyebrow">
+            <Sparkles size={14} /> Student & Advisor Portal
+          </span>
+          <h1>Sign in to nextED</h1>
+          <p>Access your university applications, AI counsellor, and advisor sessions.</p>
         </div>
-      </aside>
-
-      <div className="auth-panel">
-        <div className="auth-card">
-          <span className="eyebrow muted-eyebrow">Secure account access</span>
-          <h2>Sign in to FixItNow</h2>
-          <p>Enter the email address and password registered with your FixItNow account.</p>
-          <Suspense fallback={<div className="page-loading">Loading secure sign-in…</div>}>
-            <LoginForm />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div className="page-loading">Loading secure sign-in…</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </section>
   );

@@ -28,7 +28,7 @@ function verifyMutationRequest(request: NextRequest): boolean {
   const fetchSite = request.headers.get("sec-fetch-site");
   const requestedWith = request.headers.get("x-requested-with");
   const csrfHeader = request.headers.get("x-csrf-token");
-  const csrfName = process.env.NODE_ENV === "production" ? "__Host-fixit_csrf" : "fixit_csrf";
+  const csrfName = process.env.NODE_ENV === "production" ? "__Host-nexted_csrf" : "nexted_csrf";
   const csrfCookie = request.cookies.get(csrfName)?.value;
 
   // Origin verification
@@ -42,7 +42,7 @@ function verifyMutationRequest(request: NextRequest): boolean {
   }
 
   // Custom header verification
-  if (requestedWith !== "FixItNow-Web") {
+  if (requestedWith !== "NextED-Web") {
     return false;
   }
 

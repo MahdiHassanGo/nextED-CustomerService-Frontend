@@ -4,14 +4,16 @@ import { useAuth } from "@/components/AuthProvider";
 import { Logo } from "@/components/Logo";
 import { useToast } from "@/components/ToastProvider";
 import { initials, roleLabel } from "@/lib/utils";
-import { LayoutDashboard, LogIn, LogOut, Menu, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Bot, Compass, GraduationCap, LayoutDashboard, LogIn, LogOut, Menu, Sparkles, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const links = [
-  { href: "/services", label: "Services" },
-  { href: "/technicians", label: "Professionals" }
+  { href: "/services", label: "Courses & Programs", icon: GraduationCap },
+  { href: "/technicians", label: "Advisors & Consultants", icon: Users },
+  { href: "/#ai-counsellor", label: "AI Counsellor", icon: Bot },
+  { href: "/#destinations", label: "Destinations", icon: Compass }
 ];
 
 export function Header() {
@@ -39,7 +41,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className={pathname.startsWith(link.href) ? "active" : ""}
+              className={pathname === link.href || (link.href !== "/" && !link.href.includes("#") && pathname.startsWith(link.href)) ? "active" : ""}
               onClick={() => setOpen(false)}
             >
               {link.label}
@@ -83,7 +85,7 @@ export function Header() {
                   className="mobile-only"
                   onClick={() => setOpen(false)}
                 >
-                  <UserPlus size={18} /> Create account
+                  <UserPlus size={18} /> Start your journey
                 </Link>
               </>
             )
@@ -92,7 +94,7 @@ export function Header() {
 
         <div className="header-actions">
           <span className="secure-chip">
-            <ShieldCheck size={15} /> Secure booking
+            <Sparkles size={15} /> AI + Human Team
           </span>
 
           {!loading && (
@@ -101,7 +103,7 @@ export function Header() {
                 <Link
                   href="/dashboard"
                   className="user-pill"
-                  title={`${roleLabel(user.role)} dashboard`}
+                  title={`${roleLabel(user.role)} workspace`}
                 >
                   <span className="avatar small">{initials(user.name)}</span>
                   <span>
@@ -125,7 +127,7 @@ export function Header() {
                   Sign in
                 </Link>
                 <Link href="/auth/register" className="button button-primary desktop-only">
-                  Get started
+                  Start Journey
                 </Link>
               </>
             )

@@ -1,4 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#1473e6"/>
-  <path d="M38.5 13.5a13 13 0 0 0-15.7 16.8L11.9 41.2a5.2 5.2 0 0 0 7.4 7.4l10.9-10.9a13 13 0 0 0 16.8-15.7l-8.1 8.1-6.9-1.8-1.8-6.9 8.3-7.9Z" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="nexted-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00142e"/>
+      <stop offset="100%" stop-color="#08244f"/>
+    </linearGradient>
+    <linearGradient id="ai-glow" x1="16" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#ff005b"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#nexted-grad)"/>
+  <rect width="62" height="62" x="1" y="1" rx="15" stroke="rgba(0, 210, 255, 0.3)" stroke-width="1.5"/>
+  <!-- Graduation / AI Diamond Symbol -->
+  <path d="M32 14L50 24L32 34L14 24L32 14Z" fill="url(#ai-glow)"/>
+  <path d="M20 28.5V40C20 44 25.37 48 32 48C38.63 48 44 44 44 40V28.5L32 35.5L20 28.5Z" fill="#ffffff" fill-opacity="0.9"/>
+  <!-- Tassel / AI Sparkle -->
+  <circle cx="50" cy="27" r="3" fill="#00d2ff"/>
+  <path d="M50 30V43" stroke="#00d2ff" stroke-width="2" stroke-linecap="round"/>
 </svg>

@@ -1,9 +1,9 @@
 {
-  "name": "FixItNow",
-  "short_name": "FixItNow",
-  "description": "Book trusted home-service professionals.",
+  "name": "nextED - AI-Powered Study Abroad Platform",
+  "short_name": "nextED",
+  "description": "The world’s first AI-powered student education consulting and study abroad platform.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f8fb",
-  "theme_color": "#102a43"
+  "background_color": "#00142e",
+  "theme_color": "#00142e"
 }

@@ -8,40 +8,46 @@ import type { PublicUser } from "@/lib/types";
 import { initials, roleLabel } from "@/lib/utils";
 import {
   BookOpenCheck,
+  Bot,
   CalendarClock,
+  CheckCircle2,
+  Compass,
   CreditCard,
   FolderCog,
   Gauge,
+  GraduationCap,
   LayoutList,
+  Layers,
   Settings,
   ShieldCheck,
-  UsersRound,
-  Wrench
+  Sparkles,
+  UsersRound
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 const roleTabs = {
   CUSTOMER: [
-    { id: "overview", label: "Overview", icon: Gauge },
-    { id: "bookings", label: "My bookings", icon: CalendarClock },
-    { id: "payments", label: "Payments", icon: CreditCard },
-    { id: "profile", label: "Profile", icon: Settings }
+    { id: "overview", label: "Student Overview", icon: Gauge },
+    { id: "bookings", label: "My Applications", icon: Layers },
+    { id: "counsellor", label: "24/7 AI Counsellor", icon: Bot },
+    { id: "payments", label: "Payments & Invoices", icon: CreditCard },
+    { id: "profile", label: "Student Profile", icon: Settings }
   ],
   TECHNICIAN: [
-    { id: "overview", label: "Overview", icon: Gauge },
-    { id: "bookings", label: "Assigned jobs", icon: BookOpenCheck },
-    { id: "services", label: "My services", icon: Wrench },
-    { id: "availability", label: "Availability", icon: CalendarClock },
-    { id: "profile", label: "Profile", icon: Settings }
+    { id: "overview", label: "Advisor Overview", icon: Gauge },
+    { id: "bookings", label: "Student Queue", icon: BookOpenCheck },
+    { id: "services", label: "Consultation Packages", icon: GraduationCap },
+    { id: "availability", label: "Weekly Schedule", icon: CalendarClock },
+    { id: "profile", label: "Advisor Profile", icon: Settings }
   ],
   ADMIN: [
-    { id: "overview", label: "Overview", icon: Gauge },
-    { id: "users", label: "Users", icon: UsersRound },
-    { id: "bookings", label: "Bookings", icon: LayoutList },
-    { id: "payments", label: "Payments", icon: CreditCard },
-    { id: "categories", label: "Categories", icon: FolderCog },
-    { id: "profile", label: "Profile", icon: Settings }
+    { id: "overview", label: "Agency Overview", icon: Gauge },
+    { id: "users", label: "Students & Advisors", icon: UsersRound },
+    { id: "bookings", label: "All Applications", icon: LayoutList },
+    { id: "payments", label: "Financial Ledger", icon: CreditCard },
+    { id: "categories", label: "Academic Disciplines", icon: FolderCog },
+    { id: "profile", label: "Admin Profile", icon: Settings }
   ]
 } as const;
 
@@ -68,7 +74,7 @@ export function DashboardShell({ initialUser }: { initialUser: PublicUser }) {
           <span>
             <strong>{user.name}</strong>
             <small>
-              <ShieldCheck size={13} /> {roleLabel(user.role)} account
+              <Sparkles size={13} /> {roleLabel(user.role)} Workspace
             </small>
           </span>
         </div>
@@ -91,10 +97,10 @@ export function DashboardShell({ initialUser }: { initialUser: PublicUser }) {
         </nav>
 
         <div className="sidebar-security">
-          <ShieldCheck size={20} />
+          <Bot size={20} />
           <span>
-            <strong>Protected workspace</strong>
-            <small>Every action is verified by backend role policies.</small>
+            <strong>nextED AI + Human Engine</strong>
+            <small>Direct access to university admissions & real-time tracking.</small>
           </span>
         </div>
       </aside>

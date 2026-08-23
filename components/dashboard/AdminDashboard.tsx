@@ -7,20 +7,26 @@ import { useToast } from "@/components/ToastProvider";
 import { api } from "@/lib/api-client";
 import { sanitizeInput } from "@/lib/security";
 import type { Booking, Category, Payment, PublicUser } from "@/lib/types";
-import { formatDate, getErrorMessage, initials, money, roleLabel } from "@/lib/utils";
+import { applicationStatusLabel, formatDate, getErrorMessage, initials, money, roleLabel } from "@/lib/utils";
 import {
   Ban,
+  Building2,
   CalendarCheck2,
   CheckCircle2,
   CreditCard,
   Edit3,
   FolderCog,
+  Globe2,
+  GraduationCap,
+  Layers,
   Plus,
   Save,
   ShieldCheck,
+  Sparkles,
   Trash2,
   UserCheck,
-  UsersRound
+  UsersRound,
+  Zap
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -61,39 +67,44 @@ export function AdminDashboard({ user, activeTab }: AdminDashboardProps) {
     void load();
   }, [load]);
 
-  const stats = useMemo(() => ({
-    users: users.length,
-    technicians: users.filter((item) => item.role === "TECHNICIAN").length,
-    bookings: bookings.length,
-    verifiedPayments: payments.filter((payment) => payment.status === "COMPLETED").length
-  }), [users, bookings, payments]);
+  const stats = useMemo(() => {
+    const totalStudents = users.filter((u) => u.role === "CUSTOMER").length;
+    const totalAdvisors = users.filter((u) => u.role === "TECHNICIAN").length;
+    const totalBookings = bookings.length;
+    const completedAdmissions = bookings.filter((b) => b.status === "COMPLETED").length;
+    const totalRevenue = payments
+      .filter((p) => p.status === "COMPLETED")
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    return { totalStudents, totalAdvisors, totalBookings, completedAdmissions, totalRevenue };
+  }, [users, bookings, payments]);
 
   const filteredUsers = useMemo(() => {
-    return users.filter((item) => {
-      const search = userFilter.search.toLowerCase();
-      const matchSearch =
-        !search ||
-        item.name.toLowerCase().includes(search) ||
-        item.email.toLowerCase().includes(search) ||
-        (item.location && item.location.toLowerCase().includes(search));
-      const matchRole = !userFilter.role || item.role === userFilter.role;
-      const matchStatus = !userFilter.status || item.activeStatus === userFilter.status;
-      return matchSearch && matchRole && matchStatus;
+    return users.filter((u) => {
+      if (userFilter.role && u.role !== userFilter.role) return false;
+      if (userFilter.status && u.activeStatus !== userFilter.status) return false;
+      if (userFilter.search) {
+        const q = userFilter.search.toLowerCase();
+        const matchesName = u.name.toLowerCase().includes(q);
+        const matchesEmail = u.email.toLowerCase().includes(q);
+        const matchesLocation = u.location?.toLowerCase().includes(q);
+        if (!matchesName && !matchesEmail && !matchesLocation) return false;
+      }
+      return true;
     });
   }, [users, userFilter]);
 
-  async function changeStatus(target: PublicUser) {
-    const activeStatus = target.activeStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
-    if (!window.confirm(`${activeStatus === "BLOCKED" ? "Block" : "Activate"} ${target.name}?`)) return;
-    setWorkingId(target.id);
+  async function toggleUserStatus(targetUser: PublicUser) {
+    const nextStatus = targetUser.activeStatus === "ACTIVE" ? "BLOCKED" : "ACTIVE";
+    const actionLabel = nextStatus === "BLOCKED" ? "block" : "reactivate";
+    if (!window.confirm(`Are you sure you want to ${actionLabel} account "${targetUser.name}"?`)) return;
+
+    setWorkingId(targetUser.id);
     try {
-      const response = await api.patch<PublicUser>(`/admin/users/${target.id}/status`, { activeStatus });
-      toast.success(response.message);
-      setUsers((current) =>
-        current.map((item) =>
-          item.id === target.id ? { ...item, activeStatus: response.data.activeStatus } : item
-        )
-      );
+      const response = await api.patch<PublicUser>(`/admin/users/${targetUser.id}/status`, {
+        activeStatus: nextStatus
+      });
+      toast.success(response.message || `User status updated to ${nextStatus}.`);
+      await load();
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -104,19 +115,19 @@ export function AdminDashboard({ user, activeTab }: AdminDashboardProps) {
   async function saveCategory(event: FormEvent) {
     event.preventDefault();
     if (!categoryModal) return;
-    setWorkingId(categoryModal.id ?? "new-category");
+    setWorkingId("category-modal");
     try {
-      const sanitizedName = sanitizeInput(categoryModal.name);
-      const sanitizedDescription = sanitizeInput(categoryModal.description);
       const payload = {
-        name: sanitizedName,
-        description: sanitizedDescription || undefined
+        name: sanitizeInput(categoryModal.name),
+        description: sanitizeInput(categoryModal.description) || undefined
       };
-      const response = categoryModal.id
-        ? await api.patch<Category>(`/admin/categories/${categoryModal.id}`, payload)
-        : await api.post<Category>("/admin/categories", payload);
-
-      toast.success(response.message);
+      if (categoryModal.id) {
+        const response = await api.patch<Category>(`/admin/categories/${categoryModal.id}`, payload);
+        toast.success(response.message || "Discipline updated.");
+      } else {
+        const response = await api.post<Category>("/admin/categories", payload);
+        toast.success(response.message || "New academic discipline added.");
+      }
       setCategoryModal(null);
       await load();
     } catch (error) {
@@ -127,12 +138,12 @@ export function AdminDashboard({ user, activeTab }: AdminDashboardProps) {
   }
 
   async function deleteCategory(category: Category) {
-    if (!window.confirm(`Delete the category “${category.name}”? This works only when no services use it.`)) return;
+    if (!window.confirm(`Delete the academic discipline "${category.name}"?`)) return;
     setWorkingId(category.id);
     try {
-      const response = await api.delete<{ id: string }>(`/admin/categories/${category.id}`);
-      toast.success(response.message);
-      setCategories((current) => current.filter((item) => item.id !== category.id));
+      const response = await api.delete(`/admin/categories/${category.id}`);
+      toast.success(response.message || "Category removed.");
+      await load();
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -141,462 +152,405 @@ export function AdminDashboard({ user, activeTab }: AdminDashboardProps) {
   }
 
   if (loading) {
-    return (
-      <div className="dashboard-loading">
-        <Loading label="Loading administration workspace" />
-      </div>
-    );
+    return <Loading label="Loading NextED agency administration system..." />;
   }
 
-  // 1. Overview Tab
-  if (activeTab === "overview") {
-    const recentBookings = bookings.slice(0, 5);
-
-    return (
-      <div className="dashboard-section">
-        <div className="dashboard-heading">
-          <div>
-            <span className="eyebrow muted-eyebrow">Administration</span>
-            <h1>Platform overview</h1>
-            <p>Monitor users, booking activity, payment records, and service taxonomy.</p>
-          </div>
-          <span className="admin-chip">
-            <ShieldCheck size={17} /> Privileged access
-          </span>
-        </div>
-
-        <div className="stats-grid">
-          <article>
-            <span className="stat-icon">
-              <UsersRound />
-            </span>
-            <small>Total users</small>
-            <strong>{stats.users}</strong>
-            <span>All registered accounts</span>
-          </article>
-
-          <article>
-            <span className="stat-icon">
-              <UserCheck />
-            </span>
-            <small>Technicians</small>
-            <strong>{stats.technicians}</strong>
-            <span>Professional service providers</span>
-          </article>
-
-          <article>
-            <span className="stat-icon">
-              <CalendarCheck2 />
-            </span>
-            <small>Total bookings</small>
-            <strong>{stats.bookings}</strong>
-            <span>Across all statuses</span>
-          </article>
-
-          <article>
-            <span className="stat-icon">
-              <CreditCard />
-            </span>
-            <small>Verified payments</small>
-            <strong>{stats.verifiedPayments}</strong>
-            <span>Completed gateway transactions</span>
-          </article>
-        </div>
-
-        <div className="panel-card">
-          <div className="panel-heading">
-            <div>
-              <h2>Recent booking activity</h2>
-              <p>Latest platform-wide customer requests.</p>
-            </div>
-          </div>
-
-          {recentBookings.length > 0 ? (
-            <div className="booking-list">
-              {recentBookings.map((booking) => (
-                <article className="booking-row" key={booking.id}>
-                  <div className="booking-date">
-                    <strong>
-                      {new Date(booking.createdAt).toLocaleDateString("en-BD", { day: "2-digit" })}
-                    </strong>
-                    <small>
-                      {new Date(booking.createdAt).toLocaleDateString("en-BD", { month: "short" })}
-                    </small>
-                  </div>
-                  <div className="booking-info">
-                    <span className="category-pill">{booking.service.category.name}</span>
-                    <h3>{booking.service.title}</h3>
-                    <p>
-                      {booking.customer.name} → {booking.technician.user.name}
-                    </p>
-                    <small>{formatDate(booking.scheduledAt)}</small>
-                  </div>
-                  <div className="booking-amount">
-                    <strong>{money(booking.totalAmount)}</strong>
-                    <StatusBadge status={booking.status} />
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <EmptyState title="No bookings" description="Platform bookings will appear here." />
-          )}
-        </div>
-
-        <div className="dashboard-security-banner">
-          <ShieldCheck size={24} />
-          <span>
-            <strong>Administrative actions remain backend-enforced</strong>
-            <small>
-              This interface cannot create admins, expose passwords, bypass ownership, or override payment verification.
-            </small>
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Users Tab
-  if (activeTab === "users") {
-    return (
-      <div className="dashboard-section">
-        <div className="dashboard-heading">
-          <div>
-            <span className="eyebrow muted-eyebrow">Account moderation</span>
-            <h1>Users</h1>
-            <p>Search accounts and change supported active or blocked statuses.</p>
-          </div>
-        </div>
-
-        <div className="table-filters">
-          <input
-            value={userFilter.search}
-            onChange={(event) => setUserFilter({ ...userFilter, search: event.target.value })}
-            placeholder="Search name, email, or location"
-          />
-          <select
-            value={userFilter.role}
-            onChange={(event) => setUserFilter({ ...userFilter, role: event.target.value })}
-          >
-            <option value="">All roles</option>
-            <option value="CUSTOMER">Customers</option>
-            <option value="TECHNICIAN">Technicians</option>
-            <option value="ADMIN">Admins</option>
-          </select>
-          <select
-            value={userFilter.status}
-            onChange={(event) => setUserFilter({ ...userFilter, status: event.target.value })}
-          >
-            <option value="">All statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="BLOCKED">Blocked</option>
-          </select>
-        </div>
-
-        {filteredUsers.length > 0 ? (
-          <div className="table-card">
-            <div className="data-table user-table">
-              <div className="table-head">
-                <span>User</span>
-                <span>Role</span>
-                <span>Location</span>
-                <span>Joined</span>
-                <span>Status</span>
-                <span>Action</span>
-              </div>
-              {filteredUsers.map((item) => (
-                <div className="table-row" key={item.id}>
-                  <span data-label="User" className="table-user">
-                    <span className="avatar small">{initials(item.name)}</span>
-                    <span>
-                      <strong>{item.name}</strong>
-                      <small>{item.email}</small>
-                    </span>
-                  </span>
-                  <span data-label="Role">{roleLabel(item.role)}</span>
-                  <span data-label="Location">{item.location || "—"}</span>
-                  <span data-label="Joined">
-                    {formatDate(item.createdAt, { dateStyle: "medium", timeStyle: undefined })}
-                  </span>
-                  <span data-label="Status">
-                    <StatusBadge status={item.activeStatus} />
-                  </span>
-                  <span data-label="Action">
-                    <button
-                      type="button"
-                      className={`button button-small ${
-                        item.activeStatus === "ACTIVE" ? "button-ghost danger-text" : "button-secondary"
-                      }`}
-                      disabled={workingId === item.id || item.id === user.id}
-                      onClick={() => changeStatus(item)}
-                    >
-                      {item.activeStatus === "ACTIVE" ? <Ban size={15} /> : <CheckCircle2 size={15} />}
-                      {workingId === item.id ? "Updating…" : item.activeStatus === "ACTIVE" ? "Block" : "Activate"}
-                    </button>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <EmptyState
-            title="No users match the filters"
-            description="Clear one or more filters to broaden your search results."
-          />
-        )}
-      </div>
-    );
-  }
-
-  // 3. Bookings Tab
-  if (activeTab === "bookings") {
-    return (
-      <div className="dashboard-section">
-        <div className="dashboard-heading">
-          <div>
-            <span className="eyebrow muted-eyebrow">Platform activity</span>
-            <h1>All bookings</h1>
-            <p>Operational overview of all system bookings and current status lifecycles.</p>
-          </div>
-        </div>
-
-        {bookings.length > 0 ? (
-          <div className="table-card">
-            <div className="data-table booking-table">
-              <div className="table-head">
-                <span>Service</span>
-                <span>Customer</span>
-                <span>Technician</span>
-                <span>Schedule</span>
-                <span>Amount</span>
-                <span>Status</span>
-              </div>
-              {bookings.map((booking) => (
-                <div className="table-row" key={booking.id}>
-                  <span data-label="Service">
-                    <strong>{booking.service.title}</strong>
-                    <small>{booking.service.category.name}</small>
-                  </span>
-                  <span data-label="Customer">
-                    <strong>{booking.customer.name}</strong>
-                    <small>{booking.customer.email}</small>
-                  </span>
-                  <span data-label="Technician">
-                    <strong>{booking.technician.user.name}</strong>
-                    <small>{booking.technician.user.email}</small>
-                  </span>
-                  <span data-label="Schedule">{formatDate(booking.scheduledAt)}</span>
-                  <span data-label="Amount">{money(booking.totalAmount)}</span>
-                  <span data-label="Status">
-                    <StatusBadge status={booking.status} />
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <EmptyState title="No bookings" description="There are no platform bookings created yet." />
-        )}
-      </div>
-    );
-  }
-
-  // 4. Payments Tab
-  if (activeTab === "payments") {
-    return (
-      <div className="dashboard-section">
-        <div className="dashboard-heading">
-          <div>
-            <span className="eyebrow muted-eyebrow">Financial records</span>
-            <h1>All payments</h1>
-            <p>Gateway-created transactions and server-verified statuses across the platform.</p>
-          </div>
-        </div>
-
-        {payments.length > 0 ? (
-          <div className="table-card">
-            <div className="data-table admin-payment-table">
-              <div className="table-head">
-                <span>Transaction</span>
-                <span>User</span>
-                <span>Provider</span>
-                <span>Amount</span>
-                <span>Status</span>
-                <span>Created</span>
-              </div>
-              {payments.map((payment) => (
-                <div className="table-row" key={payment.id}>
-                  <span data-label="Transaction">
-                    <strong>{payment.transactionId}</strong>
-                    <small>{payment.method || "Hosted checkout"}</small>
-                  </span>
-                  <span data-label="User">
-                    <strong>{payment.user?.name || "Customer"}</strong>
-                    <small>{payment.user?.email || payment.userId}</small>
-                  </span>
-                  <span data-label="Provider">{payment.provider}</span>
-                  <span data-label="Amount">{money(payment.amount, payment.currency)}</span>
-                  <span data-label="Status">
-                    <StatusBadge status={payment.status} />
-                  </span>
-                  <span data-label="Created">{formatDate(payment.createdAt)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <EmptyState
-            title="No payments"
-            description="Payment records are created once bookings enter checkout."
-          />
-        )}
-      </div>
-    );
-  }
-
-  // 5. Categories Tab
   return (
-    <div className="dashboard-section">
-      <div className="dashboard-heading">
-        <div>
-          <span className="eyebrow muted-eyebrow">Service taxonomy</span>
-          <h1>Categories</h1>
-          <p>Create and edit categories. Deletion is safely blocked while services use a category.</p>
-        </div>
-        <button
-          type="button"
-          className="button button-primary"
-          onClick={() => setCategoryModal({ name: "", description: "" })}
-        >
-          <Plus size={17} /> Add category
-        </button>
-      </div>
+    <div>
+      {/* 1. OVERVIEW TAB */}
+      {activeTab === "overview" && (
+        <>
+          <div className="section-heading" style={{ marginBottom: "28px" }}>
+            <div>
+              <span className="eyebrow muted-eyebrow">
+                <ShieldCheck size={16} /> Platform Administration
+              </span>
+              <h2>nextED Agency Command Center</h2>
+              <p>Real-time analytics across global admissions, verified advisors, and financial performance.</p>
+            </div>
+            <span className="status-badge success">
+              <Sparkles size={14} /> System Operational 100%
+            </span>
+          </div>
 
-      {categories.length > 0 ? (
-        <div className="management-grid category-management-grid">
-          {categories.map((category) => (
-            <article className="management-card" key={category.id}>
-              <div className="management-card-head">
-                <span className="service-icon small-service-icon">
-                  <FolderCog size={20} />
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">
+                <GraduationCap size={24} />
+              </div>
+              <div className="stat-info">
+                <small>Enrolled Students</small>
+                <strong>{stats.totalStudents}</strong>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon cyan">
+                <UsersRound size={24} />
+              </div>
+              <div className="stat-info">
+                <small>Verified Advisors</small>
+                <strong>{stats.totalAdvisors}</strong>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">
+                <Layers size={24} />
+              </div>
+              <div className="stat-info">
+                <small>Total Applications</small>
+                <strong>{stats.totalBookings}</strong>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon cyan">
+                <CreditCard size={24} />
+              </div>
+              <div className="stat-info">
+                <small>Processed Volume</small>
+                <strong>{money(stats.totalRevenue)}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px", marginTop: "24px" }}>
+            <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-xl)", padding: "24px" }}>
+              <h3 style={{ fontSize: "17px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <CheckCircle2 size={18} style={{ color: "var(--emerald-600)" }} /> Visa Success Metric
+              </h3>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+                <span style={{ fontSize: "36px", fontWeight: "850", color: "var(--navy-950)", fontFamily: "var(--font-heading)" }}>
+                  98.4%
                 </span>
-                <span className="category-count">{category._count?.services ?? 0} services</span>
+                <span style={{ color: "var(--emerald-600)", fontWeight: "700", fontSize: "14px" }}>+2.1% this quarter</span>
               </div>
-              <h3>{category.name}</h3>
-              <p>{category.description || "No category description has been provided."}</p>
-              <div className="management-actions">
-                <button
-                  type="button"
-                  className="button button-secondary button-small"
-                  onClick={() =>
-                    setCategoryModal({
-                      id: category.id,
-                      name: category.name,
-                      description: category.description ?? ""
-                    })
-                  }
-                >
-                  <Edit3 size={15} /> Edit
-                </button>
-                <button
-                  type="button"
-                  className="button button-ghost button-small danger-text"
-                  disabled={workingId === category.id}
-                  onClick={() => deleteCategory(category)}
-                >
-                  <Trash2 size={15} /> {workingId === category.id ? "Deleting…" : "Delete"}
-                </button>
+              <p style={{ color: "var(--muted)", fontSize: "13px", margin: "8px 0 0 0" }}>
+                Over 500+ successful student visas across UK, Australia, USA, and Canada.
+              </p>
+            </div>
+
+            <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-xl)", padding: "24px" }}>
+              <h3 style={{ fontSize: "17px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Globe2 size={18} style={{ color: "var(--cyan-600)" }} /> Global Partner Institutions
+              </h3>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+                <span style={{ fontSize: "36px", fontWeight: "850", color: "var(--navy-950)", fontFamily: "var(--font-heading)" }}>
+                  100+
+                </span>
+                <span style={{ color: "var(--cyan-600)", fontWeight: "700", fontSize: "14px" }}>15 Countries</span>
               </div>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="No categories"
-          description="Create the first service category for technicians to list under."
-          action={
+              <p style={{ color: "var(--muted)", fontSize: "13px", margin: "8px 0 0 0" }}>
+                Direct API integration with university admissions boards and CAS issuance systems.
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 2. STUDENTS & ADVISORS MANAGEMENT TAB */}
+      {activeTab === "users" && (
+        <>
+          <div className="section-heading" style={{ marginBottom: "28px" }}>
+            <div>
+              <h2>Students & Education Advisors Moderation</h2>
+              <p>Search registered accounts, view contact credentials, and manage platform permissions.</p>
+            </div>
+          </div>
+
+          {/* User Filters */}
+          <div className="filter-bar" style={{ marginBottom: "24px" }}>
+            <div className="filter-search-input" style={{ flex: 1 }}>
+              <input
+                value={userFilter.search}
+                onChange={(e) => setUserFilter({ ...userFilter, search: e.target.value })}
+                placeholder="Search user by name, email, or country..."
+              />
+            </div>
+
+            <select
+              className="filter-select"
+              value={userFilter.role}
+              onChange={(e) => setUserFilter({ ...userFilter, role: e.target.value })}
+            >
+              <option value="">All Roles</option>
+              <option value="CUSTOMER">Students</option>
+              <option value="TECHNICIAN">Education Advisors</option>
+              <option value="ADMIN">Platform Admins</option>
+            </select>
+
+            <select
+              className="filter-select"
+              value={userFilter.status}
+              onChange={(e) => setUserFilter({ ...userFilter, status: e.target.value })}
+            >
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="BLOCKED">Blocked</option>
+            </select>
+          </div>
+
+          <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>User Profile</th>
+                  <th>Role</th>
+                  <th>Contact Info</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span className="avatar small">{initials(u.name)}</span>
+                        <div>
+                          <strong>{u.name}</strong>
+                          <small style={{ color: "var(--muted)", display: "block" }}>Joined {formatDate(u.createdAt)}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="category-pill">{roleLabel(u.role)}</span>
+                    </td>
+                    <td>
+                      <div>{u.email}</div>
+                      <small style={{ color: "var(--muted)" }}>{u.phone || "No phone"}</small>
+                    </td>
+                    <td>{u.location || "Global"}</td>
+                    <td>
+                      <StatusBadge status={u.activeStatus} />
+                    </td>
+                    <td>
+                      {u.role !== "ADMIN" && (
+                        <button
+                          type="button"
+                          className={`button button-small ${u.activeStatus === "ACTIVE" ? "button-ghost danger-text" : "button-secondary"}`}
+                          onClick={() => toggleUserStatus(u)}
+                          disabled={workingId === u.id}
+                        >
+                          {u.activeStatus === "ACTIVE" ? "Block" : "Reactivate"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* 3. ALL APPLICATIONS TAB */}
+      {activeTab === "bookings" && (
+        <>
+          <div className="section-heading" style={{ marginBottom: "28px" }}>
+            <div>
+              <h2>Global Applications & Consultation Sessions</h2>
+              <p>Monitor real-time application pipelines across all university programs.</p>
+            </div>
+          </div>
+
+          <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Program / Package</th>
+                  <th>Student</th>
+                  <th>Assigned Advisor</th>
+                  <th>Scheduled Date</th>
+                  <th>Milestone Status</th>
+                  <th>Fee</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map((booking) => (
+                  <tr key={booking.id}>
+                    <td>
+                      <strong>{booking.service.title}</strong>
+                      <small style={{ color: "var(--muted)", display: "block" }}>{booking.service.category?.name || "Program"}</small>
+                    </td>
+                    <td>
+                      <div>{booking.customer.name}</div>
+                      <small style={{ color: "var(--muted)" }}>{booking.customer.email}</small>
+                    </td>
+                    <td>
+                      <div>{booking.technician.user?.name || "Advisor"}</div>
+                      <small style={{ color: "var(--muted)" }}>{booking.technician.location || "Global"}</small>
+                    </td>
+                    <td>{formatDate(booking.scheduledAt)}</td>
+                    <td>
+                      <StatusBadge status={booking.status} />
+                    </td>
+                    <td>
+                      <strong>{money(booking.totalAmount)}</strong>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* 4. FINANCIAL LEDGER TAB */}
+      {activeTab === "payments" && (
+        <>
+          <div className="section-heading" style={{ marginBottom: "28px" }}>
+            <div>
+              <h2>Global Financial Ledger & Gateway Logs</h2>
+              <p>Verified transactions processed via Stripe and SSLCOMMERZ checkout integrations.</p>
+            </div>
+          </div>
+
+          <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Gateway Provider</th>
+                  <th>Transaction ID</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
+                  <th>Total Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.id}>
+                    <td>
+                      <strong>{payment.user?.name || "Student"}</strong>
+                      <small style={{ color: "var(--muted)", display: "block" }}>{payment.user?.email}</small>
+                    </td>
+                    <td>{payment.provider}</td>
+                    <td>
+                      <code style={{ fontSize: "12px" }}>{payment.transactionId}</code>
+                    </td>
+                    <td>{formatDate(payment.createdAt)}</td>
+                    <td>
+                      <StatusBadge status={payment.status} />
+                    </td>
+                    <td>
+                      <strong>{money(payment.amount, payment.currency)}</strong>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* 5. ACADEMIC DISCIPLINES / CATEGORIES TAB */}
+      {activeTab === "categories" && (
+        <>
+          <div className="section-heading" style={{ marginBottom: "28px" }}>
+            <div>
+              <h2>Academic Disciplines & Program Categories</h2>
+              <p>Manage the university study fields available in the public exploration catalog.</p>
+            </div>
             <button
               type="button"
-              className="button button-primary"
+              className="button button-primary button-small"
               onClick={() => setCategoryModal({ name: "", description: "" })}
             >
-              Create category
+              <Plus size={16} /> Add Discipline
             </button>
-          }
-        />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+            {categories.map((category) => (
+              <div key={category.id} style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-lg)", padding: "24px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                    <h3 style={{ fontSize: "18px", margin: 0 }}>{category.name}</h3>
+                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                      {category._count?.services ?? 0} packages
+                    </span>
+                  </div>
+                  <p style={{ color: "var(--muted)", fontSize: "14px", lineHeight: "1.5" }}>
+                    {category.description || "Global degree programs and university admission pathways."}
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "20px", paddingTop: "14px", borderTop: "1px solid var(--line-soft)" }}>
+                  <button
+                    type="button"
+                    className="button button-ghost button-small"
+                    onClick={() =>
+                      setCategoryModal({
+                        id: category.id,
+                        name: category.name,
+                        description: category.description || ""
+                      })
+                    }
+                  >
+                    <Edit3 size={14} /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-ghost button-small danger-text"
+                    onClick={() => deleteCategory(category)}
+                    disabled={workingId === category.id}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
+      {/* Category Modal */}
       {categoryModal && (
-        <CategoryModal
-          form={categoryModal}
-          setForm={setCategoryModal}
-          busy={workingId === (categoryModal.id ?? "new-category")}
-          onClose={() => setCategoryModal(null)}
-          onSubmit={saveCategory}
-        />
-      )}
-    </div>
-  );
-}
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2>{categoryModal.id ? "Edit Academic Discipline" : "New Academic Discipline"}</h2>
+              <button type="button" onClick={() => setCategoryModal(null)}>✕</button>
+            </div>
+            <form onSubmit={saveCategory} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <label className="field">
+                <span>Discipline Name</span>
+                <input
+                  required
+                  placeholder="e.g. Data Science & Artificial Intelligence"
+                  value={categoryModal.name}
+                  onChange={(e) => setCategoryModal({ ...categoryModal, name: e.target.value })}
+                  style={{ padding: "10px", border: "1px solid var(--line)", borderRadius: "var(--radius-md)" }}
+                />
+              </label>
 
-interface CategoryModalProps {
-  form: CategoryForm;
-  setForm: (form: CategoryForm | null) => void;
-  busy: boolean;
-  onClose: () => void;
-  onSubmit: (event: FormEvent) => void;
-}
+              <label className="field">
+                <span>Description / Curriculum Overview</span>
+                <textarea
+                  rows={4}
+                  placeholder="Brief summary of programs, career prospects, and international demand in this discipline..."
+                  value={categoryModal.description}
+                  onChange={(e) => setCategoryModal({ ...categoryModal, description: e.target.value })}
+                  style={{ padding: "10px", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", resize: "vertical" }}
+                />
+              </label>
 
-function CategoryModal({ form, setForm, busy, onClose, onSubmit }: CategoryModalProps) {
-  return (
-    <div className="modal-backdrop" role="presentation">
-      <div className="modal compact-modal" role="dialog" aria-modal="true">
-        <div className="modal-head">
-          <div>
-            <span className="eyebrow muted-eyebrow">Admin category</span>
-            <h2>{form.id ? "Edit category" : "Create category"}</h2>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button type="button" className="button button-ghost" onClick={() => setCategoryModal(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="button button-primary" disabled={workingId === "category-modal"}>
+                  {workingId === "category-modal" ? "Saving..." : categoryModal.id ? "Save Changes" : "Create Discipline"}
+                </button>
+              </div>
+            </form>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
-            ×
-          </button>
         </div>
-
-        <form onSubmit={onSubmit}>
-          <label className="field">
-            <span>Name</span>
-            <input
-              required
-              minLength={2}
-              maxLength={100}
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-              placeholder="e.g. Carpentry & Woodwork"
-            />
-          </label>
-
-          <label className="field">
-            <span>
-              Description <small>(optional)</small>
-            </span>
-            <textarea
-              rows={4}
-              maxLength={1000}
-              value={form.description}
-              onChange={(event) => setForm({ ...form, description: event.target.value })}
-              placeholder="Describe what services fall under this category…"
-            />
-          </label>
-
-          <div className="modal-actions">
-            <button type="button" className="button button-ghost" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="button button-primary" disabled={busy}>
-              <Save size={16} /> {busy ? "Saving…" : "Save category"}
-            </button>
-          </div>
-        </form>
-      </div>
+      )}
     </div>
   );
 }
