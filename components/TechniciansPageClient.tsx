@@ -4,8 +4,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/Loading";
 import { TechnicianCard } from "@/components/TechnicianCard";
 import { api } from "@/lib/api-client";
+import { CERTIFIED_EDUCATION_ADVISORS, sanitizeAdvisor } from "@/lib/education-advisors";
 import type { ApiMeta, TechnicianProfile } from "@/lib/types";
-import { CheckCircle2, RotateCcw, Search, SlidersHorizontal, Sparkles, Users } from "lucide-react";
+import { RotateCcw, Search, SlidersHorizontal, Sparkles, Users } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
@@ -28,22 +29,83 @@ export function TechniciansPageClient() {
 
   const load = useCallback(async (next = filters) => {
     setLoading(true);
-    const query = new URLSearchParams();
-    Object.entries(next).forEach(([key, value]) => {
-      if (value) query.set(key, value);
-    });
-    query.set("limit", "9");
+    let allAdvisors: TechnicianProfile[] = [];
 
     try {
+      const query = new URLSearchParams();
+      if (next.search) query.set("search", next.search);
+      query.set("limit", "50");
+
       const response = await api.get<TechnicianProfile[]>(`/technicians?${query}`);
-      setTechnicians(response.data);
-      setMeta(response.meta ?? emptyMeta);
+      const apiData = (response.data ?? []).map(sanitizeAdvisor);
+
+      // Merge API response with curated CERTIFIED_EDUCATION_ADVISORS avoiding duplicates
+      const existingIds = new Set(apiData.map((item) => item.id));
+      const curatedNotPresent = CERTIFIED_EDUCATION_ADVISORS.filter((item) => !existingIds.has(item.id));
+      allAdvisors = [...apiData, ...curatedNotPresent];
     } catch {
-      setTechnicians([]);
-      setMeta(emptyMeta);
-    } finally {
-      setLoading(false);
+      allAdvisors = CERTIFIED_EDUCATION_ADVISORS;
     }
+
+    // Apply Client-Side Filtering
+    let filtered = [...allAdvisors];
+
+    if (next.search) {
+      const s = next.search.toLowerCase();
+      filtered = filtered.filter(
+        (advisor) =>
+          (advisor.user?.name ?? "").toLowerCase().includes(s) ||
+          (advisor.bio ?? "").toLowerCase().includes(s) ||
+          (advisor.location ?? "").toLowerCase().includes(s) ||
+          advisor.skills.some((sk) => sk.toLowerCase().includes(s))
+      );
+    }
+
+    if (next.location) {
+      const loc = next.location.toLowerCase();
+      filtered = filtered.filter(
+        (advisor) =>
+          (advisor.location ?? "").toLowerCase().includes(loc) ||
+          (advisor.user?.location ?? "").toLowerCase().includes(loc) ||
+          advisor.skills.some((sk) => sk.toLowerCase().includes(loc))
+      );
+    }
+
+    if (next.minRating) {
+      const min = parseFloat(next.minRating);
+      filtered = filtered.filter((advisor) => (advisor.rating || 0) >= min);
+    }
+
+    // Sorting
+    filtered.sort((a, b) => {
+      if (next.sortBy === "rating") {
+        const rA = a.rating || 0;
+        const rB = b.rating || 0;
+        return next.sortOrder === "desc" ? rB - rA : rA - rB;
+      }
+      if (next.sortBy === "experienceYears") {
+        const eA = a.experienceYears || 0;
+        const eB = b.experienceYears || 0;
+        return next.sortOrder === "desc" ? eB - eA : eA - eB;
+      }
+      if (next.sortBy === "createdAt") {
+        const dA = new Date(a.createdAt || 0).getTime();
+        const dB = new Date(b.createdAt || 0).getTime();
+        return next.sortOrder === "desc" ? dB - dA : dA - dB;
+      }
+      return 0;
+    });
+
+    const page = parseInt(next.page || "1", 10);
+    const limit = 9;
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const startIndex = (page - 1) * limit;
+    const paginated = filtered.slice(startIndex, startIndex + limit);
+
+    setTechnicians(paginated);
+    setMeta({ page, limit, total, totalPages });
+    setLoading(false);
   }, [filters]);
 
   useEffect(() => {
@@ -213,11 +275,14 @@ export function TechniciansPageClient() {
           </>
         ) : (
           <EmptyState
-            icon={Users}
+            icon={<Users size={28} />}
             title="No education advisors found"
             description="Try changing your search terms or clearing destination filters."
-            actionLabel="Reset filters"
-            onAction={handleReset}
+            action={
+              <button type="button" className="button button-secondary button-small" onClick={handleReset}>
+                Reset filters
+              </button>
+            }
           />
         )}
       </div>

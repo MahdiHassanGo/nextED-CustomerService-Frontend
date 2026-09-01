@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const backendUrl = (process.env.BACKEND_URL ?? "https://fix-it-now-6b1c.vercel.app").replace(/\/$/, "");
+const backendUrl = (process.env.BACKEND_URL ?? "http://localhost:5000").replace(/\/$/, "");
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const MAX_BODY_BYTES = 1024 * 1024; // 1 MB limit
 

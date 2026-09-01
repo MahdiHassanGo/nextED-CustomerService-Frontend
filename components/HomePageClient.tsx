@@ -4,6 +4,7 @@ import { CardSkeleton } from "@/components/Loading";
 import { ServiceCard } from "@/components/ServiceCard";
 import { TechnicianCard } from "@/components/TechnicianCard";
 import { api } from "@/lib/api-client";
+import { CERTIFIED_EDUCATION_ADVISORS, sanitizeAdvisor } from "@/lib/education-advisors";
 import type { Category, Service, TechnicianProfile } from "@/lib/types";
 import {
   ArrowRight,
@@ -206,7 +207,7 @@ export function HomePageClient() {
   useEffect(() => {
     Promise.allSettled([
       api.get<Service[]>("/services?limit=6&sortBy=rating&sortOrder=desc"),
-      api.get<TechnicianProfile[]>("/technicians?limit=3&sortBy=rating&sortOrder=desc"),
+      api.get<TechnicianProfile[]>("/technicians?limit=6&sortBy=rating&sortOrder=desc"),
       api.get<Category[]>("/categories")
     ]).then(([serviceResult, techResult, categoryResult]) => {
       if (serviceResult.status === "fulfilled" && serviceResult.value.data.length > 0) {
@@ -216,9 +217,12 @@ export function HomePageClient() {
       }
 
       if (techResult.status === "fulfilled" && techResult.value.data.length > 0) {
-        setTechnicians(techResult.value.data);
+        const sanitized = techResult.value.data.map(sanitizeAdvisor);
+        const existingIds = new Set(sanitized.map((t) => t.id));
+        const extra = CERTIFIED_EDUCATION_ADVISORS.filter((a) => !existingIds.has(a.id));
+        setTechnicians([...sanitized, ...extra]);
       } else {
-        setTechnicians(fallbackTechnicians);
+        setTechnicians(CERTIFIED_EDUCATION_ADVISORS);
       }
 
       if (categoryResult.status === "fulfilled" && categoryResult.value.data.length > 0) {

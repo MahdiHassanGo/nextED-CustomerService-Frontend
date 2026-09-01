@@ -423,7 +423,7 @@ export function TechnicianDashboard({ user, activeTab }: TechnicianDashboardProp
             </div>
           ) : (
             <EmptyState
-              icon={BookOpenCheck}
+              icon={<BookOpenCheck size={28} />}
               title="No student inquiries assigned"
               description="New consultation bookings and application review requests will appear here."
             />
@@ -529,19 +529,26 @@ export function TechnicianDashboard({ user, activeTab }: TechnicianDashboardProp
             </div>
           ) : (
             <EmptyState
-              icon={GraduationCap}
+              icon={<GraduationCap size={28} />}
               title="No consultation packages published"
               description="Create your first advisory package to allow students to book 1-on-1 strategy sessions with you."
-              actionLabel="Create Package"
-              onAction={() =>
-                setServiceModal({
-                  title: "",
-                  description: "",
-                  price: "350",
-                  location: user.location || "UK & USA Admissions",
-                  categoryId: categories[0]?.id || "",
-                  isActive: true
-                })
+              action={
+                <button
+                  type="button"
+                  className="button button-primary button-small"
+                  onClick={() =>
+                    setServiceModal({
+                      title: "",
+                      description: "",
+                      price: "350",
+                      location: user.location || "UK & USA Admissions",
+                      categoryId: categories[0]?.id || "",
+                      isActive: true
+                    })
+                  }
+                >
+                  Create Package
+                </button>
               }
             />
           )}
