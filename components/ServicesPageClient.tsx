@@ -264,11 +264,14 @@ export function ServicesPageClient() {
           </>
         ) : (
           <EmptyState
-            icon={Compass}
+            icon={<Compass size={28} />}
             title="No study programs found"
             description="Try changing your search keywords, clearing filters, or exploring all global destinations."
-            actionLabel="Reset search filters"
-            onAction={handleReset}
+            action={
+              <button type="button" className="button button-secondary button-small" onClick={handleReset}>
+                Reset search filters
+              </button>
+            }
           />
         )}
       </div>

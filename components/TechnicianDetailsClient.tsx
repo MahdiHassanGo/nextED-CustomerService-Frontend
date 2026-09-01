@@ -3,6 +3,7 @@
 import { Loading } from "@/components/Loading";
 import { ServiceCard } from "@/components/ServiceCard";
 import { api } from "@/lib/api-client";
+import { CERTIFIED_EDUCATION_ADVISORS, sanitizeAdvisor } from "@/lib/education-advisors";
 import type { TechnicianProfile } from "@/lib/types";
 import { formatDate, initials, money } from "@/lib/utils";
 import {
@@ -31,8 +32,18 @@ export function TechnicianDetailsClient({ id }: { id: string }) {
 
   useEffect(() => {
     void api.get<TechnicianProfile>(`/technicians/${id}`)
-      .then((response) => setTechnician(response.data))
-      .catch(() => setTechnician(null))
+      .then((response) => {
+        if (response.data) {
+          setTechnician(sanitizeAdvisor(response.data));
+        } else {
+          const local = CERTIFIED_EDUCATION_ADVISORS.find((a) => a.id === id);
+          setTechnician(local ?? null);
+        }
+      })
+      .catch(() => {
+        const local = CERTIFIED_EDUCATION_ADVISORS.find((a) => a.id === id);
+        setTechnician(local ?? null);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 

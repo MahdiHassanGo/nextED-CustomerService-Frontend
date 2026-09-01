@@ -386,11 +386,14 @@ export function CustomerDashboard({ user, activeTab }: CustomerDashboardProps) {
             </div>
           ) : (
             <EmptyState
-              icon={GraduationCap}
+              icon={<GraduationCap size={28} />}
               title="No applications yet"
               description="Start your study abroad journey by exploring thousands of programs and booking with a certified advisor."
-              actionLabel="Explore Programs"
-              onAction={() => window.location.assign("/services")}
+              action={
+                <button type="button" className="button button-primary button-small" onClick={() => window.location.assign("/services")}>
+                  Explore Programs
+                </button>
+              }
             />
           )}
         </>
@@ -529,7 +532,7 @@ export function CustomerDashboard({ user, activeTab }: CustomerDashboardProps) {
             </div>
           ) : (
             <EmptyState
-              icon={CreditCard}
+              icon={<CreditCard size={28} />}
               title="No payment history"
               description="Invoices and receipts will appear here after an advisor accepts your application package."
             />
